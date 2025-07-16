@@ -1,9 +1,6 @@
 package com.zwickit.grpc.java.course.greeting.client;
 
-import com.zwickit.grpc.java.course.greet.GreetResponse;
-import com.zwickit.grpc.java.course.greet.GreetRequest;
-import com.zwickit.grpc.java.course.greet.GreetServiceGrpc;
-import com.zwickit.grpc.java.course.greet.Greeting;
+import com.zwickit.grpc.java.course.greet.*;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
@@ -19,7 +16,16 @@ public class GreetingClient {
 
         // Create a synchronous blocking stub to call the service
         GreetServiceGrpc.GreetServiceBlockingStub syncClient = GreetServiceGrpc.newBlockingStub(transportChannel);
+        //GreetServiceGrpc.GreetServiceFutureStub asyncClient = GreetServiceGrpc.newFutureStub(transportChannel);
 
+        //sendUnary(syncClient);
+        sendServerStreaming(syncClient);
+
+        System.out.println("Shutting down transport channel...");
+        transportChannel.shutdown();
+    }
+
+    private static void sendUnary(GreetServiceGrpc.GreetServiceBlockingStub client) {
         // Create a request & store the response
         Greeting greeting = Greeting.newBuilder()
                         .setFirstName("Max")
@@ -28,13 +34,19 @@ public class GreetingClient {
         GreetRequest req = GreetRequest.newBuilder()
                         .setGreeting(greeting)
                         .build();
-        GreetResponse res = syncClient.greet(req);
+        GreetResponse res = client.greet(req);
 
         // Print the response from the server
         System.out.println("Received response: " + res.getResult());
-
-        System.out.println("Shutting down transport channel...");
-        transportChannel.shutdown();
     }
 
+    private static void sendServerStreaming(GreetServiceGrpc.GreetServiceBlockingStub client) {
+        GreetManyTimesRequest request = GreetManyTimesRequest.newBuilder()
+                .setGreeting(
+                        Greeting.newBuilder().setFirstName("Max").build()
+                ).build();
+
+        // Stream the responses (in a blocking manner until onComplete is sent)
+        client.greetManyTimes(request).forEachRemaining(greetManyTimesResponse -> System.out.println(greetManyTimesResponse.getResult()));
+    }
 }

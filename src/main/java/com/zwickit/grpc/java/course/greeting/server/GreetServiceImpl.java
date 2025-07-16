@@ -1,9 +1,6 @@
 package com.zwickit.grpc.java.course.greeting.server;
 
-import com.zwickit.grpc.java.course.greet.GreetRequest;
-import com.zwickit.grpc.java.course.greet.GreetResponse;
-import com.zwickit.grpc.java.course.greet.GreetServiceGrpc;
-import com.zwickit.grpc.java.course.greet.Greeting;
+import com.zwickit.grpc.java.course.greet.*;
 import io.grpc.stub.StreamObserver;
 
 /**
@@ -32,4 +29,27 @@ public class GreetServiceImpl extends GreetServiceGrpc.GreetServiceImplBase {
         responseObserver.onCompleted();
     }
 
+    @Override
+    public void greetManyTimes(GreetManyTimesRequest request, StreamObserver<GreetManyTimesResponse> responseObserver) {
+        String firstName = request.getGreeting().getFirstName();
+
+        try {
+            for (int i=0; i<10; i++) {
+                String result = "Hello, " + firstName + ", response number: " + i + "!";
+                GreetManyTimesResponse response = GreetManyTimesResponse.newBuilder()
+                        .setResult(result)
+                        .build();
+
+                responseObserver.onNext(response);
+
+                Thread.sleep(1000L);
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            // Complete the response stream
+            responseObserver.onCompleted();
+        }
+
+    }
 }
